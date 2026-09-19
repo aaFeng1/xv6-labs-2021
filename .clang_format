@@ -1,0 +1,36 @@
+BasedOnStyle: LLVM
+
+# 基础排版
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 0          # 不强制换行（xv6 风格）
+
+# 函数风格（关键）
+AlwaysBreakAfterReturnType: All
+AllowShortFunctionsOnASingleLine: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterStruct: false
+  AfterUnion: false
+
+# if / while / for
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+BreakBeforeBraces: Custom
+
+# 指针对齐（靠近变量名）
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# 空格
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInContainerLiterals: false
+
+# 其他
+IndentCaseLabels: true
+IndentGotoLabels: true
