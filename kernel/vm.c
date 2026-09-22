@@ -94,6 +94,7 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
       *pte = PA2PTE(pagetable) | PTE_V;
     }
   }
+  pagetable[PX(0, va)] |= PTE_A;
   return &pagetable[PX(0, va)];
 }
 
@@ -441,7 +442,7 @@ static void printhead(int dep)
   }
 }
 
-static void print(pagetable_t pagetable, int dep)
+static void print(pagetable_t pagetable, int dep, int perm)
 {
   for (int i = 0; i < 512; ++i)
   {
@@ -449,17 +450,54 @@ static void print(pagetable_t pagetable, int dep)
     if (pte & PTE_V)
     {
       printhead(dep);
-      printf("%d: pte %p pa %p\n", i, pte, PTE2PA(pte));
+      if (perm != 0)
+        printf("%d: pte %d\n", i, (pte & perm) > 0 ? 1 : 0);
+      else
+        printf("%d: pte %p, pa %p\n", i, pte, PTE2PA(pte));
       if (dep < 3)
       {
-        print((pagetable_t)PTE2PA(pte), dep + 1);
+        print((pagetable_t)PTE2PA(pte), dep + 1, perm);
       }
     }
   }
 }
 
-void vmprint(pagetable_t pagetable)
+void vmprint(pagetable_t pagetable, int perm)
 {
   printf("page table %p\n", pagetable);
-  print(pagetable, 1);
+  print(pagetable, 1, perm);
+}
+
+static int checkaccess(pagetable_t pagetable, uint64 va)
+{
+  if (va >= MAXVA)
+    panic("pgaccess: va is bigger than MAXVA");
+
+  for (int level = 2; level > 0; level--)
+  {
+    pte_t *pte = &pagetable[PX(level, va)];
+    if (*pte & PTE_V)
+    {
+      pagetable = (pagetable_t)PTE2PA(*pte);
+    }
+    else
+    {
+      panic("pgaccess: invaild pte");
+    }
+  }
+
+  int res = (pagetable[PX(0, va)] & PTE_A) > 0 ? 1 : 0;
+  pagetable[PX(0, va)] &= ~PTE_A;
+  return res;
+}
+
+unsigned int pgaccess(pagetable_t pagetable, uint64 base, int len)
+{
+  unsigned int resmask = 0;
+  base = PGROUNDDOWN(base);
+  for (int i = 0; i < len; ++i)
+    if (checkaccess(pagetable, base + i * PGSIZE))
+      resmask |= 1 << i;
+
+  return resmask;
 }

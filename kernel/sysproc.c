@@ -75,12 +75,28 @@ sys_sleep(void)
   return 0;
 }
 
-
 #ifdef LAB_PGTBL
-int
-sys_pgaccess(void)
+int sys_pgaccess(void)
 {
-  // lab pgtbl: your code here.
+  uint64 base;
+  int len;
+  uint64 mask;
+  struct proc *p = myproc();
+  unsigned int mymask;
+
+  if (argaddr(0, &base) < 0)
+    return -1;
+  if (argint(1, &len) < 0)
+    return -1;
+  if (len > 32 || len <= 0)
+    return -1;
+  if (argaddr(2, &mask) < 0)
+    return -1;
+  mymask = pgaccess(p->pagetable, base, len);
+
+  if (copyout(p->pagetable, mask, (char *)&mymask, sizeof(mymask)) < 0)
+    return -1;
+
   return 0;
 }
 #endif
