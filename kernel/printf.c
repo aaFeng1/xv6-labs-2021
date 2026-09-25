@@ -121,6 +121,7 @@ panic(char *s)
   printf("panic: ");
   printf(s);
   printf("\n");
+  backtrace();
   panicked = 1; // freeze uart output from other CPUs
   for(;;)
     ;
@@ -131,4 +132,30 @@ printfinit(void)
 {
   initlock(&pr.lock, "pr");
   pr.locking = 1;
+}
+
+void backtrace(void)
+{
+  printf("backtrace:\n");
+  uint64 *fp = (uint64 *)r_fp();
+  struct proc *p = myproc();
+  uint64 stack_bottom = (uint64)p->kstack + PGSIZE; // 栈的最高地址
+  uint64 stack_top = (uint64)p->kstack;             // 栈的最低地址
+
+  while (fp != 0)
+  {
+    // 检查 fp 是否在合法栈范围内，且 16 字节对齐
+    if ((uint64)fp < stack_top || (uint64)fp >= stack_bottom)
+    {
+      break;
+    }
+    if ((uint64)fp % 16 != 0)
+    {
+      break;
+    }
+
+    printf("%p\n", fp[-1]);
+
+    fp = (uint64 *)fp[-2];
+  }
 }
